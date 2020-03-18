@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <style>
+        body {
+            margin: 0px;
+            padding: 0px;
+            width: 100vw;
+            height: 100vh;
+        }
+
+        .wrapper {
+            width: 350px;
+            height: 630px;
+            position: relative;
+            margin: auto;
+            border: 1px solid #333;
+        }
+
+        .obstacle {
+            width: 70px;
+            height: 70px;
+            background: #765;
+            position: absolute;
+        }
+
+        .move_obj {
+            width: 70px;
+            height: 70px;
+            background: #578;
+            position: absolute;
+            bottom: 0px;
+            left: 140px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="score-box">
+        <span>得分：</span>
+        <span class="score"></span>
+    </div>
+    <div class="wrapper">
+        <div class="move_obj"></div>
+    </div>
+
+    <script>
+        var _wrapper = document.getElementsByClassName('wrapper')[0];
+        var _moveObj = document.getElementsByClassName('move_obj')[0];
+        var _score = document.getElementsByClassName('score')[0];
+        var _moveObjLeft = 140;
+        var score = 0;
+        var ObstacleArr = [];
+        var timer;
+        var timer2;
+        var config = {
+            durationForMove: 16, //移动计时器时间间隔，单位毫秒
+            durationForCreateObstacle: 1500, //产生障碍物的计时器的间隔
+            durationForTime: 16, //计算时间的计时间隔
+        }
+
+        function getRandom(min, max) {
+            return Math.floor(Math.random() * (max - min) + min);
+        }
+
+        // 绑定touch事件
+        _moveObj.addEventListener('touchmove', function (event) {
+            if (event.targetTouches.length == 1) {
+                event.preventDefault(); // 阻止浏览器默认事件
+                var touch = event.targetTouches[0];
+                // 把元素放在手指所在的位置
+                _moveObj.style.left = touch.pageX - 70 + 'px';
+                if (touch.pageX - 70 <= 0) { //  滑动到最左端时
+                    _moveObj.style.left = 0 + 'px'
+                }
+                if (touch.pageX - 70 >= 280) { // 滑动到最右端
+                    _moveObj.style.left = 280 + 'px'
+                }
+                _moveObjLeft = _moveObj.offsetLeft; // pageX获取dom最左侧距离
+            }
+        })
+        //  创建一个障碍物
+        function CreateObstacle() {
+            var obstacle = {
+                dom: document.createElement("div"),
+                top: 0,
+                left: getRandom(0, 280),
+                isEat: false,
+                ySpeed: getRandom(40, 100),
+                isInit: false,
+                isShow: false,
+                show: function () {
+                    if (!this.isInit) {
+                        //还没有初始化
+                        this.dom.className = "obstacle";
+                        _wrapper.appendChild(this.dom);
+                        this.isInit = true; //已完成初始化
+                    }
+                    this.dom.style.left = this.left + "px";
+                    this.dom.style.top = this.top + "px";
+                    this.isShow = true;
+                },
+                move: function (duartion) {
+
+                    this.top += this.ySpeed * duartion;
+
+                    if (this.isShow && this.top >= 490 && Math.abs(_moveObjLeft - this.left) < 70) {
+                        this.isShow = false;
+                        score += 1;
+                        _score.innerHTML = score;
+                        this.dom.remove();
+                    }
+                    if (this.isShow && this.top > 560) {
+                        this.dom.remove();
+                        clearInterval(timer);
+                        clearInterval(timer2);
+                        alert("游戏结束，最终得分：" + score);
+                    }
+                    this.dom.style.top = this.top + "px";
+                }
+            }
+            obstacle.show();
+
+            return obstacle;
+        }
+
+        function init() {
+            timer = setInterval(function () {
+                var a = CreateObstacle();
+                ObstacleArr.push(a);
+            }, config.durationForCreateObstacle) // 设置间隔时间
+
+            timer2 = setInterval(function () {
+                var second = config.durationForMove / 700;
+                for (var i = 0; i < ObstacleArr.length; i++) {
+                    var m = ObstacleArr[i]; //得到当前怪物
+                    m.move(second);
+                }
+            }, config.durationForMove)
+        }
+
+        init();
+    </script>
+</body>
+
+</html>
